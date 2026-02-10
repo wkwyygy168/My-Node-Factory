@@ -5,12 +5,16 @@ SOURCES = [
     'https://raw.githubusercontent.com/freefq/free/master/v2ray',
     'https://raw.githubusercontent.com/2RayFree/ss/main/sub',
     'https://raw.githubusercontent.com/vless-js/v2ray-free/main/v2ray',
-    'https://raw.githubusercontent.com/colatiger/v2ray-nodes/master/updates/v2ray.txt',
     'https://t.me/s/v2rayfree',
     'https://t.me/s/V2List',
     'https://t.me/s/v2ray_free_conf',
     'https://t.me/s/free_v2ray_config',
-    'https://raw.githubusercontent.com/anaer/Sub/master/v2ray.txt'
+    'https://t.me/s/ssrList',
+    'https://t.me/s/C_137_channel',
+    'https://t.me/s/daily_free_nodes',
+    'https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt',
+    'https://raw.githubusercontent.com/ssrsub/ssr/master/v2ray',
+    'https://raw.githubusercontent.com/LonUp/NodeList/main/NodeList'
 ]
 
 def collect():
