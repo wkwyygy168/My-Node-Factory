@@ -2,19 +2,15 @@ import requests
 import re
 
 SOURCES = [
-    'https://raw.githubusercontent.com/freefq/free/master/v2ray',
-    'https://raw.githubusercontent.com/2RayFree/ss/main/sub',
-    'https://raw.githubusercontent.com/vless-js/v2ray-free/main/v2ray',
+    # 精选订阅池（这些链接里通常包含成百上千个节点）
+    'https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt',
+    'https://raw.githubusercontent.com/LonUp/NodeList/main/NodeList',
+    'https://raw.githubusercontent.com/tianfong/free-nodes/main/node.txt',
+    'https://raw.githubusercontent.com/ermaozi/get_node/main/subscribe/v2ray.txt',
+    # 保持几个更新极快的电报源
     'https://t.me/s/v2rayfree',
     'https://t.me/s/V2List',
-    'https://t.me/s/v2ray_free_conf',
-    'https://t.me/s/free_v2ray_config',
-    'https://t.me/s/ssrList',
-    'https://t.me/s/C_137_channel',
-    'https://t.me/s/daily_free_nodes',
-    'https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt',
-    'https://raw.githubusercontent.com/ssrsub/ssr/master/v2ray',
-    'https://raw.githubusercontent.com/LonUp/NodeList/main/NodeList'
+    'https://t.me/s/free_v2ray_config'
 ]
 
 def collect():
