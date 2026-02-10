@@ -4,21 +4,23 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_and_decode(url):
-    """单线程采集与解码逻辑"""
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+    """单线程采集与多层解码逻辑"""
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
     try:
-        r = requests.get(url, headers=headers, timeout=15)
+        r = requests.get(url, headers=headers, timeout=20)
         if r.status_code == 200:
             content = r.text
-            # 协议识别指纹：包含所有主流协议
+            # 协议识别正则：捕获 ss, ssr, vmess, vless, trojan, hy2, tuic
             pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"]+'
             
-            # 1. 抓取原始明文链接
+            # 1. 直接抓取明文
             found = re.findall(pattern, content, re.I)
             
-            # 2. 深度爆破：尝试对文本进行 Base64 解码再抓一次
+            # 2. 深度爆破：尝试 Base64 解码提取 (处理加密订阅源)
             try:
-                decoded = base64.b64decode(content).decode('utf-8')
+                # 预处理：去除可能的换行符，确保 base64 能够正确解码
+                clean_content = content.replace('\n', '').replace('\r', '').strip()
+                decoded = base64.b64decode(clean_content).decode('utf-8')
                 found.extend(re.findall(pattern, decoded, re.I))
             except:
                 pass
@@ -27,9 +29,9 @@ def fetch_and_decode(url):
         return []
 
 def collector():
-    print("🛰️ [SYSTEM] 正在启动 80+ 全球源并行收割引擎...")
+    print("🛰️ [SYSTEM] 正在启动全球 80+ 源并行收割引擎...")
     
-    # --- 80+ 精品源列表开始 ---
+    # --- 经过严格语法校对的 targets 列表 ---
     targets = [
         "https://raw.githubusercontent.com/freefq/free/master/v2ray",
         "https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt",
@@ -117,25 +119,24 @@ def collector():
         "https://raw.githubusercontent.com/tbbatbb/Proxy/master/dist/v2ray.config.txt",
         "https://raw.githubusercontent.com/mksshare/SSR-V2ray-Trojan-Clash-subscription/main/Clash.yaml"
     ]
-    # --- 80+ 精品源列表结束 ---
 
-    all_nodes = []
-    
-    # 使用 ThreadPoolExecutor 开启 20 线程并行抓取
+    all_found = []
+    # 开启多线程加速，解决 80 个源运行过慢导致超时的问题
     with ThreadPoolExecutor(max_workers=20) as executor:
         results = executor.map(fetch_and_decode, targets)
-        for result in results:
-            all_nodes.extend(result)
+        for res in results:
+            all_found.extend(res)
 
-    # 全局去重
-    unique_nodes = list(set(all_nodes))
+    # 全局唯一性去重
+    unique_nodes = list(set(all_found))
     
     with open("nodes.txt", "w", encoding="utf-8") as f:
         if unique_nodes:
             f.write("\n".join(unique_nodes))
-            print(f"✅ [SUCCESS] 全球收割完成！捕获唯一精品节点: {len(unique_nodes)} 个")
+            print(f"✅ [SUCCESS] 全球爆破完成！已聚合唯一精品节点: {len(unique_nodes)} 个")
         else:
-            f.write("vmess://ew0KICAiYWRkIjogIjguOC44LjgiLCAicHMiOiAi5LqR56uv5pS25Ymy5LitLi4uIn0=")
+            # 写入保底节点，确保 Karing 订阅不会因空文件报错
+            f.write("ss://YWVzLTI1Ni1jZmI6WG44aktkbURNMDBJZU8lIyQjZkpBTXRzRUFFVU9wSC9ZV1l0WXFERm5UMFNWQDEwMy4xODYuMTU1LjI3OjM4Mzg4#云端收割机正在全力作业")
 
 if __name__ == "__main__":
     collector()
