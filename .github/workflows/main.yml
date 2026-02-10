@@ -2,8 +2,8 @@ name: Node Collector Bot
 
 on:
   schedule:
-    - cron: '0 */5 * * *'
-  workflow_dispatch:
+    - cron: '0 */6 * * *'  # 意思是每 6 小时自动运行一次
+  workflow_dispatch:      # 允许你手动点击运行
 
 jobs:
   build:
