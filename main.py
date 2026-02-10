@@ -2,15 +2,23 @@ import requests
 import re
 
 SOURCES = [
-    # 精选订阅池（这些链接里通常包含成百上千个节点）
+    # 顶级大佬维护的实时池
+    'https://raw.githubusercontent.com/freefq/free/master/v2ray',
+    'https://raw.githubusercontent.com/2RayFree/ss/main/sub',
+    'https://raw.githubusercontent.com/vless-js/v2ray-free/main/v2ray',
     'https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt',
     'https://raw.githubusercontent.com/LonUp/NodeList/main/NodeList',
     'https://raw.githubusercontent.com/tianfong/free-nodes/main/node.txt',
-    'https://raw.githubusercontent.com/ermaozi/get_node/main/subscribe/v2ray.txt',
-    # 保持几个更新极快的电报源
+    # 多个高质量电报频道网页版
     'https://t.me/s/v2rayfree',
     'https://t.me/s/V2List',
-    'https://t.me/s/free_v2ray_config'
+    'https://t.me/s/free_v2ray_config',
+    'https://t.me/s/ssrList',
+    'https://t.me/s/C_137_channel',
+    'https://t.me/s/daily_free_nodes',
+    # 额外补充的汇总源
+    'https://raw.githubusercontent.com/mianfeifq/share/main/data.txt',
+    'https://raw.githubusercontent.com/Pawpieee/Free-Proxies/main/sub/sub_merge.txt'
 ]
 
 def collect():
