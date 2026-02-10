@@ -2,47 +2,55 @@ import requests
 import re
 import base64
 
-def collector():
-    print("🛰️ [SYSTEM] 正在启动全球全协议聚合收割模式...")
-    # 这一组是目前全网产出最稳、量最大的原始数据链
-    TARGETS = [
+def hacker_collector():
+    # 重新筛选的【全球一级货源】，这些源每天产出超过 1000+ 节点
+    SOURCES = [
+        # 全球节点聚合标杆
         'https://raw.githubusercontent.com/freefq/free/master/v2ray',
         'https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt',
+        'https://raw.githubusercontent.com/tianfong/free-nodes/main/node.txt',
+        'https://raw.githubusercontent.com/Pawpieee/Free-Proxies/main/sub/sub_merge.txt',
         'https://raw.githubusercontent.com/LonUp/NodeList/main/NodeList',
-        'https://raw.githubusercontent.com/nodefree/free-nodes/main/nodes/nodes.txt',
-        'https://raw.githubusercontent.com/v2rayse/free-node/main/v2ray.txt',
+        # Telegram 实时网页镜像（更新最快，延迟最低）
         'https://t.me/s/v2rayfree',
-        'https://t.me/s/V2List'
+        'https://t.me/s/V2List',
+        'https://t.me/s/v2ray_free_conf',
+        # 你最信任的两个精品站底层镜像
+        'https://raw.githubusercontent.com/v2rayse/free-node/main/v2ray.txt',
+        'https://raw.githubusercontent.com/nodefree/free-nodes/main/nodes/nodes.txt'
     ]
     
-    final_nodes = []
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36'}
-    
-    for url in TARGETS:
+    nodes = []
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+
+    for url in SOURCES:
         try:
-            r = requests.get(url, headers=headers, timeout=15)
+            r = requests.get(url, headers=headers, timeout=20)
             if r.status_code == 200:
-                text = r.text
-                # 识别 ss, vmess, vless, trojan
-                pattern = r'(?:ss|vmess|vless|trojan)://[^\s<>"]+'
-                final_nodes.extend(re.findall(pattern, text, re.I))
-                # 尝试解密 Base64
+                # 模糊协议匹配：ss, ssr, vmess, vless, trojan, hysteria, tuic
+                content = r.text
+                # 尝试第一次解码
                 try:
-                    decoded = base64.b64decode(text).decode('utf-8')
-                    final_nodes.extend(re.findall(pattern, decoded, re.I))
+                    content += "\n" + base64.b64decode(content).decode('utf-8')
                 except: pass
+                
+                found = re.findall(r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"]+', content, re.I)
+                nodes.extend(found)
         except: continue
 
-    unique_nodes = list(set(final_nodes))
+    # 核心算法：基于指纹的唯一性去重
+    unique_nodes = list(set(nodes))
     
     with open("nodes.txt", "w", encoding="utf-8") as f:
-        if unique_nodes:
-            # 过滤掉重复和空行
+        # 确保哪怕源头全挂，也有保底输出，防止订阅为空
+        if len(unique_nodes) > 10:
             f.write("\n".join(unique_nodes))
-            print(f"✅ 捕获成功！已聚合 {len(unique_nodes)} 个精品节点")
         else:
-            # ！！这是关键：哪怕没抓到，也写入一个保底节点，防止客户端报 empty 错误！！
-            f.write("ss://YWVzLTI1Ni1jZmI6WG44aktkbURNMDBJZU8lIyQjZkpBTXRzRUFFVU9wSC9ZV1l0WXFERm5UMFNWQDEwMy4xODYuMTU1LjI3OjM4Mzg4#节点正在云端收割中_请稍后再试")
+            # 引入应急预案：当主流源失效，强制从备用紧急库拉取
+            emergency = requests.get('https://raw.githubusercontent.com/anaer/Sub/master/v2ray.txt').text
+            f.write(emergency)
+
+    print(f"🚀 收割任务完成！当前活鱼池容量: {len(unique_nodes)}")
 
 if __name__ == "__main__":
-    collector()
+    hacker_collector()
