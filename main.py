@@ -2,7 +2,6 @@ import requests
 import re
 import base64
 
-# 收割机的“原材料”库
 SOURCES = [
     'https://t.me/s/v2rayfree',
     'https://t.me/s/v2ray_free_conf',
@@ -19,7 +18,6 @@ def collect():
         try:
             print(f"Fetching: {url}")
             r = requests.get(url, headers=headers, timeout=15)
-            # 正则匹配
             found = re.findall(r'(vmess|vless|ss|trojan)://[^\s<>"]+', r.text)
             nodes.extend(found)
         except:
@@ -28,11 +26,9 @@ def collect():
     unique_nodes = list(set(nodes))
     raw_text = "\n".join(unique_nodes)
     
-    # 保存原始文件
     with open("nodes.txt", "w", encoding="utf-8") as f:
         f.write(raw_text)
         
-    # 保存 Base64 订阅文件
     with open("sub_base64.txt", "w", encoding="utf-8") as f:
         encoded = base64.b64encode(raw_text.encode("utf-8")).decode("utf-8")
         f.write(encoded)
