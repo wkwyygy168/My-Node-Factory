@@ -3,61 +3,56 @@ import re
 import base64
 from concurrent.futures import ThreadPoolExecutor
 
-def fetch_and_clean(url):
-    headers = {'User-Agent': 'Mozilla/5.0'}
+def fetch_content(url):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
-        r = requests.get(url, headers=headers, timeout=10)
+        r = requests.get(url, headers=headers, timeout=15)
         if r.status_code == 200:
-            content = r.text
-            # 协议匹配
+            text = r.text.strip()
+            # 协议指纹
             pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"]+'
-            nodes = re.findall(pattern, content, re.I)
             
-            # 尝试解码加密源
+            # 第一步：直接找明文节点
+            found = re.findall(pattern, text, re.I)
+            
+            # 第二步：尝试整体 Base64 解码（解决很多订阅源全加密的问题）
             try:
-                decoded = base64.b64decode(content.strip()).decode('utf-8')
-                nodes.extend(re.findall(pattern, decoded, re.I))
+                # 补全 base64 填充符，防止报错
+                missing_padding = len(text) % 4
+                if missing_padding: text += '=' * (4 - missing_padding)
+                decoded = base64.b64decode(text).decode('utf-8')
+                found.extend(re.findall(pattern, decoded, re.I))
             except: pass
             
-            # --- 借鉴 subs-check 的清洗逻辑 ---
-            cleaned_nodes = []
-            for node in nodes:
-                # 1. 长度过滤：太短的链接通常配置不全，直接扔掉
-                if len(node) < 30: continue
-                # 2. 权重过滤：优先保留存活率最高的协议
-                if any(p in node.lower() for p in ['hy2', 'tuic', 'vless', 'trojan']):
-                    cleaned_nodes.append(node)
-                # 3. 基础协议保留：ss/vmess 经过简单去重保留
-                elif len(node) > 100: # 较长的配置通常更稳
-                    cleaned_nodes.append(node)
-            return cleaned_nodes
+            # 第三步：按行扫描（针对混合格式）
+            for line in text.splitlines():
+                if len(line.strip()) > 30 and '://' not in line:
+                    try:
+                        line_dec = base64.b64decode(line.strip()).decode('utf-8')
+                        found.extend(re.findall(pattern, line_dec, re.I))
+                    except: pass
+            return found
     except: return []
 
 def collector():
-    print("🛰️ [SYSTEM] 引擎升级：正在进行深度清洗收割...")
-    
-    # 这里继续使用你已经跑通的 80 条源列表 (此处为演示，保持你代码中 targets 不变即可)
-    targets = [
-        "https://raw.githubusercontent.com/freefq/free/master/v2ray",
-        # ... (请保持你 main.py 中那 80 条已经跑通的链接不变)
-    ]
+    print("🛰️ [SYSTEM] 引擎全开：正在进行全量深度爆破...")
+    # 保持你那 80 条源不变
+    targets = [ "这里放你那80条源..." ] 
     
     all_found = []
     with ThreadPoolExecutor(max_workers=30) as executor:
-        results = executor.map(fetch_and_clean, targets)
+        results = executor.map(fetch_content, targets)
         for res in results:
             if res: all_found.extend(res)
 
-    # 唯一性去重
     unique_nodes = list(set(all_found))
-    
     with open("nodes.txt", "w", encoding="utf-8") as f:
-        if len(unique_nodes) > 0:
+        if len(unique_nodes) > 5: # 只有超过5个才认为是成功收割
             f.write("\n".join(unique_nodes))
-            print(f"✅ [SUCCESS] 质量优化完成！已精选节点: {len(unique_nodes)} 个")
+            print(f"✅ [SUCCESS] 爆破完成！捕获节点: {len(unique_nodes)} 个")
         else:
-            # 保底输出
-            f.write("ss://YWVzLTI1Ni1jZmI6WG44aktkbURNMDBJZU8lIyQjZkpBTXRzRUFFVU9wSC9ZV1l0WXFERm5UMFNWQDEwMy4xODYuMTU1LjI3OjM4Mzg4#引擎收割清洗中")
+            # 即使失败，保底节点也要带上说明，方便调试
+            f.write("ss://YWVzLTI1Ni1jZmI6WG44aktkbURNMDBJZU8lIyQjZkpBTXRzRUFFVU9wSC9ZV1l0WXFERm5UMFNWQDEwMy4xODYuMTU1LjI3OjM4Mzg4#节点捕获偏少_源可能在维护")
 
 if __name__ == "__main__":
     collector()
