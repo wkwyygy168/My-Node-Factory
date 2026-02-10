@@ -16,7 +16,6 @@ def collect():
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
     for url in SOURCES:
         try:
-            print(f"Fetching: {url}")
             r = requests.get(url, headers=headers, timeout=15)
             found = re.findall(r'(vmess|vless|ss|trojan)://[^\s<>"]+', r.text)
             nodes.extend(found)
@@ -32,7 +31,6 @@ def collect():
     with open("sub_base64.txt", "w", encoding="utf-8") as f:
         encoded = base64.b64encode(raw_text.encode("utf-8")).decode("utf-8")
         f.write(encoded)
-    print(f"Success! Collected {len(unique_nodes)} nodes.")
 
 if __name__ == "__main__":
     collect()
