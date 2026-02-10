@@ -2,12 +2,15 @@ import requests
 import re
 
 SOURCES = [
+    'https://raw.githubusercontent.com/freefq/free/master/v2ray',
+    'https://raw.githubusercontent.com/2RayFree/ss/main/sub',
+    'https://raw.githubusercontent.com/vless-js/v2ray-free/main/v2ray',
+    'https://raw.githubusercontent.com/colatiger/v2ray-nodes/master/updates/v2ray.txt',
     'https://t.me/s/v2rayfree',
+    'https://t.me/s/V2List',
     'https://t.me/s/v2ray_free_conf',
     'https://t.me/s/free_v2ray_config',
-    'https://raw.githubusercontent.com/freefq/free/master/v2ray',
-    'https://raw.githubusercontent.com/yebekhe/TelegramV2rayCollector/main/sub/mix',
-    'https://raw.githubusercontent.com/mahdibland/V2RayAggregator/master/Eternity'
+    'https://raw.githubusercontent.com/anaer/Sub/master/v2ray.txt'
 ]
 
 def collect():
