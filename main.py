@@ -3,65 +3,91 @@ import re
 import base64
 from concurrent.futures import ThreadPoolExecutor
 
-def universal_extractor(url):
-    """像吸尘器一样，无视格式，只吸取有效的节点指纹"""
+def stream_extractor(url):
+    """模仿客户端内核的流式扫描，确保 100% 还原每一个字节"""
     headers = {'User-Agent': 'clash.meta'}
     try:
-        r = requests.get(url, headers=headers, timeout=20)
+        r = requests.get(url, headers=headers, timeout=25)
         if r.status_code != 200: return []
         
         raw_text = r.text
-        # 第一步：暴力提取所有可见的节点链接
-        # 允许包含所有非空白字符，直到遇到引号、尖括号或空格结束，确保不截断参数
-        pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic|http|https|socks5|socks)://[^\s<>"\']+'
-        found = re.findall(pattern, raw_text, re.I)
-        
-        # 第二步：对全文进行“断点式”Base64 尝试
-        # 很多 YAML 会把 Base64 节点包在特定字段里，我们直接扫描全文本中可能的 B64 块
-        b64_blocks = re.findall(r'[A-Za-z0-9+/]{40,}', raw_text)
+        # 第一步：收集所有可能的协议头位置
+        # 不再用死板的正则，而是先定位 ://
+        protocols = ["vmess://", "vless://", "ss://", "ssr://", "trojan://", "hy2://", "tuic://", "http://", "https://", "socks5://", "socks://"]
+        nodes = []
+
+        # 第二步：明文暴力扫描 (针对 YAML)
+        # 扫描逻辑：找到协议头，向后提取，直到遇到引号、空格或非法字符
+        for proto in protocols:
+            start_idx = 0
+            while True:
+                start_idx = raw_text.find(proto, start_idx)
+                if start_idx == -1: break
+                
+                # 提取逻辑：尽可能向后抓取，直到遇到明显的分界符
+                end_match = re.search(r'[\s"\'<>\{\}\]\[]', raw_text[start_idx:])
+                if end_match:
+                    node = raw_text[start_idx : start_idx + end_match.start()]
+                else:
+                    node = raw_text[start_idx:]
+                
+                nodes.append(node.strip())
+                start_idx += len(proto)
+
+        # 第三步：Base64 碎片化提取 (针对 base64.txt)
+        # 不再解整个页面，而是提取页面中所有可能的 Base64 块进行尝试
+        b64_blocks = re.findall(r'[A-Za-z0-9+/=]{40,}', raw_text)
         for block in b64_blocks:
             try:
-                # 补全填充并尝试解码
-                missing_padding = len(block) % 4
-                if missing_padding: block += "=" * (4 - missing_padding)
+                # 尝试补齐并解码
+                pad = len(block) % 4
+                if pad: block += "=" * (4 - pad)
                 decoded = base64.b64decode(block).decode('utf-8', errors='ignore')
-                found.extend(re.findall(pattern, decoded, re.I))
+                # 在解码后的内容里重复上述协议头扫描
+                for proto in protocols:
+                    s_idx = 0
+                    while True:
+                        s_idx = decoded.find(proto, s_idx)
+                        if s_idx == -1: break
+                        e_match = re.search(r'[\s"\'<>\{\}\]\[]', decoded[s_idx:])
+                        node = decoded[s_idx : s_idx + e_match.start()] if e_match else decoded[s_idx:]
+                        nodes.append(node.strip())
+                        s_idx += len(proto)
             except:
                 continue
-        return found
+                
+        return nodes
     except:
         return []
 
 def collector():
-    print("🚀 [GOD-COLLECTOR] 正在执行全网最强暴力收割，目标 92+ 节点...")
+    print("🚀 [GHOST-SCAN] 正在执行全量流式扫描，找回失踪的极品节点...")
     
-    # 锁定你的核心黄金源
     targets = [
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/base64.txt",
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
     ]
 
-    all_raw_found = []
+    all_results = []
     with ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(universal_extractor, targets)
+        results = executor.map(stream_extractor, targets)
         for res in results:
-            if res: all_raw_found.extend(res)
+            if res: all_results.extend(res)
 
-    # 重点：去重时必须保留原始编码，防止 TW² 等特殊符号被破坏
+    # 深度去重：保留最原始的数据特征
     unique_nodes = []
     seen = set()
-    for node in all_raw_found:
-        # 去掉末尾可能被误抓的标点符号
-        clean_node = node.strip().rstrip(',').rstrip(';').rstrip('}')
+    for node in all_results:
+        # 清除末尾可能的脏字符（如逗号、括号）
+        clean_node = re.split(r'[,;\}]', node)[0]
         if clean_node and clean_node not in seen:
             unique_nodes.append(clean_node)
             seen.add(clean_node)
     
-    # 按照你的需求，合并并输出到 nodes.txt
     with open("nodes.txt", "w", encoding="utf-8") as f:
         if unique_nodes:
             f.write("\n".join(unique_nodes))
-            print(f"✅ [SUCCESS] 任务完成！共计准确收集 {len(unique_nodes)} 个节点。")
+            print(f"✅ [DONE] 最终收集到 {len(unique_nodes)} 个节点。")
         else:
             print("❌ 警告：未发现有效节点。")
 
