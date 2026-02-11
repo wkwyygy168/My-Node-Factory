@@ -4,48 +4,49 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_raw_nodes(url):
-    """最原始的抓取：保住 base64.txt 完美兼容，同时强力穿透 all.yaml"""
+    """最原始的抓取：100%保住 base64.txt 逻辑，同时攻克 all.yaml 这种散装格式"""
     headers = {'User-Agent': 'Mozilla/5.0'}
     try:
         r = requests.get(url, headers=headers, timeout=20)
         if r.status_code != 200: return []
         
         raw_content = r.text.strip()
-        # 协议指纹正则
+        # 协议提取正则 (这是你验证过完全好用的 base64.txt 逻辑)
         pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic|http|https|socks5|socks)://[^\s<>"\',;]+'
         
-        # --- 1. 核心明文提取 (这是你验证过完全好用的 base64.txt 逻辑) ---
+        # --- 1. 明文提取 (base64.txt 专用) ---
         found = re.findall(pattern, raw_content, re.I)
         
-        # --- 2. 深度识别逻辑 (解决 all.yaml 这种混合格式) ---
-        # 如果第一步没抓全，我们通过识别网页中的 Base64 块进行碎片化解码
-        # 这样即便节点被包在 YAML 的字段引号里，也能被抠出来
-        b64_blocks = re.findall(r'[A-Za-z0-9+/=]{64,}', raw_content)
-        
-        # 如果网页本身就是一段 Base64 (如 base64.txt)，我们也要保底处理
-        if not found and not b64_blocks:
-            b64_blocks = [re.sub(r'[^A-Za-z0-9+/=]', '', raw_content)]
+        # --- 2. 整体解码提取 (base64.txt 专用) ---
+        try:
+            clean_b64 = re.sub(r'[^A-Za-z0-9+/=]', '', raw_content)
+            missing = len(clean_b64) % 4
+            if missing: clean_b64 += "=" * (4 - missing)
+            decoded = base64.b64decode(clean_b64).decode('utf-8', errors='ignore')
+            found.extend(re.findall(pattern, decoded, re.I))
+        except: pass
 
-        for block in b64_blocks:
+        # --- 3. 针对 all.yaml 的散装参数提取 (如果上面两招都落空) ---
+        # 如果发现 proxies 关键字，说明是 Clash 格式，直接利用成熟的 API 转换
+        if not found and ("proxies:" in raw_content or "server:" in raw_content):
+            # 这种方法不改动你的本地逻辑，而是把“翻译”工作交给更专业的订阅转换后端
+            # 出来的直接就是 Karing 能认的 :// 节点
+            convert_url = f"https://sub.id9.cc/sub?target=v2ray&url={url}"
             try:
-                # 自动补全填充符
-                missing = len(block) % 4
-                if missing: block += "=" * (4 - missing)
-                decoded = base64.b64decode(block).decode('utf-8', errors='ignore')
-                # 在解码后的内容里二次搜索 :// 节点
-                found.extend(re.findall(pattern, decoded, re.I))
-            except:
-                continue
-                
+                res = requests.get(convert_url, timeout=15)
+                if res.status_code == 200:
+                    decoded_nodes = base64.b64decode(res.text).decode('utf-8', errors='ignore')
+                    found.extend(re.findall(pattern, decoded_nodes, re.I))
+            except: pass
+
         return found
     except:
         return []
 
 def collector():
-    print("🚀 [TRUE-ORIGIN] 正在收割：保住 base64.txt 胜货，强力解析 all.yaml...")
+    print("🚀 [TRUE-ORIGIN] 正在收割：保住 base64.txt，强攻 all.yaml...")
     
-    # 按照你的要求，目标锁定在 all.yaml。
-    # 跑通后，请自行将 base64.txt 链接加回此处进行合并。
+    # 你目前想单测 all.yaml，请保持这里只有一条
     targets = [
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
     ]
@@ -57,7 +58,7 @@ def collector():
             if res:
                 all_found.extend(res)
 
-    # 深度去重：保留最原始的字符，不做任何改动
+    # 深度去重：保留最原始字符
     unique_nodes = []
     seen = set()
     for node in all_found:
@@ -66,13 +67,12 @@ def collector():
             unique_nodes.append(n)
             seen.add(n)
     
-    # 以 UTF-8 编码写入 nodes.txt
     with open("nodes.txt", "w", encoding="utf-8", newline='\n') as f:
         if unique_nodes:
             f.write("\n".join(unique_nodes))
             print(f"✅ [SUCCESS] 任务成功！共收集到 {len(unique_nodes)} 个节点。")
         else:
-            print("❌ [FAILED] all.yaml 依然无法识别，建议检查源文件格式。")
+            print("❌ [FAILED] all.yaml 依然无法识别，请考虑源文件内容是否包含有效节点。")
 
 if __name__ == "__main__":
     collector()
