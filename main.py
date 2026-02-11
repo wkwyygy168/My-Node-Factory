@@ -1,12 +1,14 @@
 import requests
 import re
 import base64
+from datetime import datetime, timedelta
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_and_decode(url):
     """暴力收割模式：只要网页有东西，全部抓回来"""
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     try:
+        # 增加超时控制，防止某个源卡死整个脚本
         r = requests.get(url, headers=headers, timeout=15)
         if r.status_code == 200:
             content = r.text.strip()
@@ -30,11 +32,27 @@ def fetch_and_decode(url):
     except:
         return []
 
+def get_dynamic_urls():
+    """具备自动日期计算能力：生成最近 10 天的 nodefree 链接"""
+    dynamic_list = []
+    today = datetime.now()
+    for i in range(10):
+        target_date = today - timedelta(days=i)
+        date_str = target_date.strftime("%Y%m%d") # 格式如: 20260211
+        month_str = target_date.strftime("%m")     # 格式如: 02
+        year_str = target_date.strftime("%Y")      # 格式如: 2026
+        url = f"https://node.nodefree.me/{year_str}/{month_str}/{date_str}.txt"
+        dynamic_list.append(url)
+    return dynamic_list
+
 def collector():
-    print("🚀 [SYSTEM] 引擎重启：正在进行全球 80+ 源全量并行收割...")
+    print("🚀 [SYSTEM] 引擎重启：正在合成动态日期源并开启并行收割...")
     
-    # 老大，这 80 个源我全部帮你核对好填进去了
-    targets = [
+    # 1. 生成动态日期链接
+    dynamic_targets = get_dynamic_urls()
+    
+    # 2. 老大，你原本的 80 个基础源
+    base_targets = [
         "https://raw.githubusercontent.com/freefq/free/master/v2ray",
         "https://raw.githubusercontent.com/vpei/free-node/master/v2ray.txt",
         "https://raw.githubusercontent.com/Pawpieee/Free-Proxies/main/sub/sub_merge.txt",
@@ -121,8 +139,11 @@ def collector():
         "https://raw.githubusercontent.com/mksshare/SSR-V2ray-Trojan-Clash-subscription/main/Clash.yaml"
     ]
 
+    # 3. 合并目标源
+    targets = base_targets + dynamic_targets
+
     all_found = []
-    # 使用 30 线程火力全开
+    # 使用 30 线程并行抓取
     with ThreadPoolExecutor(max_workers=30) as executor:
         results = executor.map(fetch_and_decode, targets)
         for res in results:
@@ -132,10 +153,11 @@ def collector():
     # 深度去重
     unique_nodes = list(set(all_found))
     
+    # 使用 'w' 模式覆盖写入，彻底解决堆积问题
     with open("nodes.txt", "w", encoding="utf-8") as f:
         if len(unique_nodes) > 1:
             f.write("\n".join(unique_nodes))
-            print(f"✅ [SUCCESS] 捕获唯一节点: {len(unique_nodes)} 个")
+            print(f"✅ [SUCCESS] 捕获唯一节点: {len(unique_nodes)} 个，已覆盖更新 nodes.txt")
         else:
             # 最终保底节点
             f.write("ss://YWVzLTI1Ni1jZmI6WG44aktkbURNMDBJZU8lIyQjZkpBTXRzRUFFVU9wSC9ZV1l0WXFERm5UMFNWQDEwMy4xODYuMTU1LjI3OjM4Mzg4#引擎热机中_请稍后刷新")
