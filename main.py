@@ -34,7 +34,7 @@ def collector():
     
     # 锁定黄金双源
     targets = [
-        "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/base64.txt"
+        "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
     ]
 
     all_found = []
