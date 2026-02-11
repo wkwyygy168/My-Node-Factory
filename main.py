@@ -4,7 +4,7 @@ import base64
 from concurrent.futures import ThreadPoolExecutor
 
 def fetch_pure_nodes(url):
-    """像搬运工一样，只负责把节点从网页里抠出来"""
+    """像吸尘器一样，只吸取最原始的协议链接，绝不改动任何字符"""
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
@@ -12,21 +12,21 @@ def fetch_pure_nodes(url):
         r = requests.get(url, headers=headers, timeout=20)
         if r.status_code == 200:
             raw_data = r.text.strip()
-            # 协议识别正则：这是目前最兼容的写法
+            # 强化版正则：确保完整捕获从协议头到末尾的所有参数
             pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"]+'
             
-            # 1. 尝试直接提取（如果网页里已经是明文）
+            # 1. 尝试直接从网页原文中吸取 (针对 all.yaml)
             found = re.findall(pattern, raw_data, re.I)
             
-            # 2. 暴力解码 Base64（针对 base64.txt 这种纯密文）
-            # 我们先尝试对整个网页内容进行 Base64 解码
+            # 2. 针对 Base64 链接的特殊处理 (针对 base64.txt)
+            # 重点：不再尝试整体解码，而是先清洗掉所有非 Base64 干扰字符
             try:
-                # 自动清理可能存在的换行符或空格
-                clean_b64 = re.sub(r'\s+', '', raw_data)
-                missing_padding = len(clean_b64) % 4
+                # 只保留 Base64 字符，剔除换行、空格等所有干扰
+                b64_only = re.sub(r'[^A-Za-z0-9+/=]', '', raw_data)
+                missing_padding = len(b64_only) % 4
                 if missing_padding:
-                    clean_b64 += "=" * (4 - missing_padding)
-                decoded = base64.b64decode(clean_b64).decode('utf-8', errors='ignore')
+                    b64_only += "=" * (4 - missing_padding)
+                decoded = base64.b64decode(b64_only).decode('utf-8', errors='ignore')
                 found.extend(re.findall(pattern, decoded, re.I))
             except:
                 pass
@@ -35,32 +35,36 @@ def fetch_pure_nodes(url):
         return []
 
 def collector():
-    print("🚀 [PURE-MODE] 纯净搬运模式启动：目标 shuaidaoya 黄金源...")
+    print("🚀 [CRITICAL-FIX] 正在执行零损耗搬运逻辑，全力追回高质量节点...")
     
-    # 按照你的要求，只写这两条你验证过最猛的链接
     targets = [
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/base64.txt",
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
     ]
 
     all_found = []
-    # 依然使用并行，速度极快
     with ThreadPoolExecutor(max_workers=5) as executor:
         results = executor.map(fetch_pure_nodes, targets)
         for res in results:
             if res:
                 all_found.extend(res)
 
-    # 深度去重（防止两条链接里有重复节点）
-    unique_nodes = list(set(all_found))
+    # 深度去重：保留最原始的字符
+    unique_nodes = []
+    seen = set()
+    for node in all_found:
+        node_clean = node.strip()
+        if node_clean not in seen:
+            unique_nodes.append(node_clean)
+            seen.add(node_clean)
     
-    # 直接写入，不加后缀，不切备注，保持原汁原味
     with open("nodes.txt", "w", encoding="utf-8") as f:
-        if len(unique_nodes) > 0:
+        if unique_nodes:
+            # 使用换行符连接，确保每个节点独立一行
             f.write("\n".join(unique_nodes))
-            print(f"✅ [SUCCESS] 搬运完毕！共计 {len(unique_nodes)} 个原始节点已入库。")
+            print(f"✅ [DONE] 搬运成功！总计捕获 {len(unique_nodes)} 个百分百原始节点。")
         else:
-            print("❌ [FAILED] 没抓到节点，请检查 GitHub 网络连通性。")
+            print("❌ 警告：未发现有效节点。")
 
 if __name__ == "__main__":
     collector()
