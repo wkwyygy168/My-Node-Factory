@@ -3,72 +3,67 @@ import re
 import base64
 from concurrent.futures import ThreadPoolExecutor
 
-def fetch_pure_nodes(url):
-    """最强搬运逻辑：支持上标、下标及所有特殊编码字符"""
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-    }
+def universal_extractor(url):
+    """像吸尘器一样，无视格式，只吸取有效的节点指纹"""
+    headers = {'User-Agent': 'clash.meta'}
     try:
-        r = requests.get(url, headers=headers, timeout=25)
-        if r.status_code == 200:
-            raw_data = r.text.strip()
-            # 【核心进化】正则表达式：
-            # 1. 允许协议头包含特殊字体
-            # 2. 匹配范围扩大到非空字符集，确保不被上标“2”等特殊符号截断
-            pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic|http|https|socks5|socks|wireguard)://[^\s<>"]+'
-            
-            # 直接提取原始明文
-            found = re.findall(pattern, raw_data, re.I)
-            
-            # 针对 Base64 的深度清洗提取
+        r = requests.get(url, headers=headers, timeout=20)
+        if r.status_code != 200: return []
+        
+        raw_text = r.text
+        # 第一步：暴力提取所有可见的节点链接
+        # 允许包含所有非空白字符，直到遇到引号、尖括号或空格结束，确保不截断参数
+        pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic|http|https|socks5|socks)://[^\s<>"\']+'
+        found = re.findall(pattern, raw_text, re.I)
+        
+        # 第二步：对全文进行“断点式”Base64 尝试
+        # 很多 YAML 会把 Base64 节点包在特定字段里，我们直接扫描全文本中可能的 B64 块
+        b64_blocks = re.findall(r'[A-Za-z0-9+/]{40,}', raw_text)
+        for block in b64_blocks:
             try:
-                # 只保留 Base64 合法字符用于解码
-                b64_only = re.sub(r'[^A-Za-z0-9+/=]', '', raw_data)
-                missing_padding = len(b64_only) % 4
-                if missing_padding:
-                    b64_only += "=" * (4 - missing_padding)
-                decoded = base64.b64decode(b64_only).decode('utf-8', errors='ignore')
-                # 在解码后的内容里再次进行全量扫描
+                # 补全填充并尝试解码
+                missing_padding = len(block) % 4
+                if missing_padding: block += "=" * (4 - missing_padding)
+                decoded = base64.b64decode(block).decode('utf-8', errors='ignore')
                 found.extend(re.findall(pattern, decoded, re.I))
             except:
-                pass
-            return found
+                continue
+        return found
     except:
         return []
 
 def collector():
-    print("🚀 [ULTIMATE-RADAR] 正在通过‘全字符识别’找回失踪的台湾节点...")
+    print("🚀 [GOD-COLLECTOR] 正在执行全网最强暴力收割，目标 92+ 节点...")
     
+    # 锁定你的核心黄金源
     targets = [
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/base64.txt",
         "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
     ]
 
-    all_found = []
+    all_raw_found = []
     with ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(fetch_pure_nodes, targets)
+        results = executor.map(universal_extractor, targets)
         for res in results:
-            if res:
-                all_found.extend(res)
+            if res: all_raw_found.extend(res)
 
-    # 深度去重：保留最原始的编码，不进行任何字符转换
+    # 重点：去重时必须保留原始编码，防止 TW² 等特殊符号被破坏
     unique_nodes = []
     seen = set()
-    for node in all_found:
-        # 使用 strip() 清除可能存在的换行干扰，但保留协议内的所有特殊符号
-        node_clean = node.strip()
-        if node_clean and node_clean not in seen:
-            unique_nodes.append(node_clean)
-            seen.add(node_clean)
+    for node in all_raw_found:
+        # 去掉末尾可能被误抓的标点符号
+        clean_node = node.strip().rstrip(',').rstrip(';').rstrip('}')
+        if clean_node and clean_node not in seen:
+            unique_nodes.append(clean_node)
+            seen.add(clean_node)
     
+    # 按照你的需求，合并并输出到 nodes.txt
     with open("nodes.txt", "w", encoding="utf-8") as f:
         if unique_nodes:
-            # 关键：以 UTF-8 编码写入，确保 $TW^2$ 等特殊符号不乱码
             f.write("\n".join(unique_nodes))
-            print(f"✅ [DONE] 搬运成功！当前共计：{len(unique_nodes)} 个节点。")
-            print(f"📊 提示：已针对上标字符（如 TW^2）完成编码优化。")
+            print(f"✅ [SUCCESS] 任务完成！共计准确收集 {len(unique_nodes)} 个节点。")
         else:
-            print("❌ 未发现节点。")
+            print("❌ 警告：未发现有效节点。")
 
 if __name__ == "__main__":
     collector()
