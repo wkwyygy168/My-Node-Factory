@@ -2,45 +2,49 @@ import requests
 import re
 import base64
 
-def fetch_all_nodes():
-    # 锁定那条让你头疼的 all.yaml
-    target_url = "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
+def fetch_and_deduplicate():
+    # --- 在这里填入你 Karing 里的所有订阅链接 ---
+    sources = [
+        "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/base64.txt",
+        "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
+        # 老大，如果你还有别的链接，直接按格式加在下面
+    ]
     
-    # 借用转换接口：这是把 YAML 里的散装零件（Server/Port/ID）还原成链接的唯一办法
-    api_url = f"https://api.v1.mk/sub?target=v2ray&url={target_url}"
+    all_nodes = []
+    seen_hashes = set() # 用于去重的核心仓库
     
-    nodes = []
-    try:
-        print("📡 正在还原 92 个节点...")
-        r = requests.get(api_url, timeout=30)
-        if r.status_code == 200:
-            # 接口返回的是 Base64，我们解开它获取 92 条明文
-            decoded = base64.b64decode(r.text).decode('utf-8', errors='ignore')
-            # 匹配所有链接
-            pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"\',;]+'
-            nodes = re.findall(pattern, decoded, re.I)
-    except Exception as e:
-        print(f"❌ 还原出错: {e}")
+    headers = {'User-Agent': 'ClashMeta'}
+    pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"\',;]+'
 
-    return nodes
+    for url in sources:
+        try:
+            # 统一通过转换接口，确保 YAML 和 Base64 都能变成标准的 :// 链接
+            api_url = f"https://api.v1.mk/sub?target=v2ray&url={url}"
+            r = requests.get(api_url, headers=headers, timeout=30)
+            
+            if r.status_code == 200:
+                decoded = base64.b64decode(r.text).decode('utf-8', errors='ignore')
+                found = re.findall(pattern, decoded, re.I)
+                
+                for node in found:
+                    # 关键去重逻辑：去掉节点名字(#后面部分)，只根据服务器配置内容去重
+                    core_config = node.split('#')[0] if '#' in node else node
+                    if core_config not in seen_hashes:
+                        all_nodes.append(node.strip())
+                        seen_hashes.add(core_config)
+        except:
+            continue
+
+    return all_nodes
 
 def main():
-    all_found = fetch_all_nodes()
+    print("🚀 开始筛选 Karing 订阅源中的有用节点...")
+    final_nodes = fetch_and_deduplicate()
     
-    # 深度去重，确保你的 Karing 列表干干净净
-    unique_nodes = []
-    seen = set()
-    for n in all_found:
-        clean_n = n.strip()
-        if clean_n and clean_n not in seen:
-            unique_nodes.append(clean_n)
-            seen.add(clean_n)
-    
-    # 写入 nodes.txt，强制 UTF-8 确保台湾节点²不乱码
     with open("nodes.txt", "w", encoding="utf-8", newline='\n') as f:
-        f.write("\n".join(unique_nodes))
+        f.write("\n".join(final_nodes))
     
-    print(f"📊 任务大获全胜！最终捕获并去重后获得 {len(unique_nodes)} 个节点。")
+    print(f"✅ 筛选去重完成！共保留 {len(final_nodes)} 个唯一节点。")
 
 if __name__ == "__main__":
     main()
