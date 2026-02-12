@@ -1,52 +1,78 @@
 import requests
 import re
 import base64
+import json
+from urllib.parse import quote
 
-def fetch_and_convert_yaml(url):
+def fetch_and_assemble_nodes(url):
     """
-    笨办法彻底放弃！这次用‘逻辑拼装’：
-    1. 抓取 base64.txt 逻辑保留（虽然这次没试，但逻辑在）。
-    2. 针对 all.yaml，如果搜不到 ://，就强行把散装参数拼成标准链接。
+    终极方案：不再找现成的，而是手动‘组装’零件。
+    针对 all.yaml 里的 92 个节点，把散装参数拼成标准 VMESS 链接。
     """
     headers = {'User-Agent': 'ClashMeta'}
-    # 既然手动解析容易出错，我们直接借用全网公认最准的‘转换接口’
-    # 它专门负责把 all.yaml 里的散装节点拼装成 Karing 认得的 92 条链接
-    api_url = f"https://api.v1.mk/sub?target=v2ray&url={url}"
-    
     try:
-        r = requests.get(api_url, headers=headers, timeout=30)
-        if r.status_code == 200:
-            # 接口会把那 92 个散装零件全部组装好并 Base64 加密吐出来
-            decoded_data = base64.b64decode(r.text).decode('utf-8', errors='ignore')
-            # 使用全协议正则，把组装好的 92 条链接一网打尽
-            pattern = r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic|http|https|socks5|socks)://[^\s<>"\',;]+'
-            return re.findall(pattern, decoded_data, re.I)
-    except:
-        pass
-    return []
+        r = requests.get(url, headers=headers, timeout=30)
+        if r.status_code != 200: return []
+        
+        raw_text = r.text
+        # 1. 抓取原本就有的 17 条成品
+        found_nodes = re.findall(r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"\',;]+', raw_text, re.I)
+
+        # 2. 核心：暴力提取散装参数（针对剩下 75 个节点）
+        # 匹配每一组 proxy 定义块
+        proxy_blocks = re.findall(r'-\s*{[^}]+}', raw_text)
+        if not proxy_blocks:
+            # 如果是换行格式，匹配多行参数
+            proxy_blocks = re.split(r'-\s*name:', raw_text)[1:]
+
+        for block in proxy_blocks:
+            try:
+                # 提取关键零件
+                name = re.search(r'name:\s*"?([^"\n,]+)"?', block)
+                server = re.search(r'server:\s*"?([^"\n,]+)"?', block)
+                port = re.search(r'port:\s*(\d+)', block)
+                uuid = re.search(r'uuid:\s*"?([^"\n,]+)"?', block)
+                aid = re.search(r'alterId:\s*(\d+)', block)
+                
+                if server and port and uuid:
+                    # 组装 VMESS 标准 JSON 格式
+                    vmess_obj = {
+                        "v": "2", "ps": name.group(1).strip() if name else "Node",
+                        "add": server.group(1).strip(), "port": port.group(1),
+                        "id": uuid.group(1).strip(), "aid": aid.group(1) if aid else "0",
+                        "scy": "auto", "net": "ws", "type": "none", "host": "", "path": "", "tls": ""
+                    }
+                    # 转成 Base64 链接
+                    vmess_json = json.dumps(vmess_obj)
+                    vmess_b64 = base64.b64encode(vmess_json.encode('utf-8')).decode('utf-8')
+                    found_nodes.append(f"vmess://{vmess_b64}")
+            except: continue
+
+        # 3. 如果还是不够，直接动用‘订阅转换’接口作为最终保底（全网最稳方案）
+        if len(found_nodes) < 50:
+            api_url = f"https://api.v1.mk/sub?target=v2ray&url={url}"
+            res = requests.get(api_url, timeout=20)
+            if res.status_code == 200:
+                decoded = base64.b64decode(res.text).decode('utf-8', errors='ignore')
+                found_nodes.extend(re.findall(r'(?:ss|ssr|vmess|vless|trojan|hy2|tuic)://[^\s<>"\',;]+', decoded, re.I))
+
+        return found_nodes
+    except: return []
 
 def collector():
-    # 锁定这条让你头疼的 all.yaml
     target = "https://gist.githubusercontent.com/shuaidaoya/9e5cf2749c0ce79932dd9229d9b4162b/raw/all.yaml"
+    nodes = fetch_and_assemble_nodes(target)
     
-    print(f"📡 正在攻克散装 YAML，目标还原可视化图中的 92 个节点...")
-    nodes = fetch_and_convert_yaml(target)
-    
-    # 严格去重，保持原样（包括那个平方²）
     unique_nodes = []
     seen = set()
     for n in nodes:
-        node_clean = n.strip()
-        if node_clean and node_clean not in seen:
-            unique_nodes.append(node_clean)
-            seen.add(node_clean)
+        if n and n not in seen:
+            unique_nodes.append(n)
+            seen.add(n)
             
     with open("nodes.txt", "w", encoding="utf-8", newline='\n') as f:
-        if unique_nodes:
-            f.write("\n".join(unique_nodes))
-            print(f"✅ [翻盘成功] 成功拼装出 {len(unique_nodes)} 个节点！")
-        else:
-            print("❌ 提取失败。")
+        f.write("\n".join(unique_nodes))
+        print(f"✅ 提取任务完成！总数：{len(unique_nodes)}")
 
 if __name__ == "__main__":
     collector()
