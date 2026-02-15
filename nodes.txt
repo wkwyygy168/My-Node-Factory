@@ -1,7 +1,2 @@
-socks://Og%3D%3D@146.235.19.84:10810#🏴‍☠_1🇸🇬SG²_8|1.8MB/s|1.1MB/s|X|History
-vmess://eyJ2IjoiMiIsInBzIjoi8J+HqfCfh6pERcKyXzF8MC42TUIvc3xHUFTigbp8WHxTdWNjZWVkIiwiYWRkIjoidjMzLmhkYWNkLmNvbSIsInBvcnQiOiIzMDgzMyIsImlkIjoiY2JiM2Y4NzctZDFmYi0zNDRjLTg3YTktZDE1M2JmZmQ1NDg0IiwiYWlkIjoiMiIsInNjeSI6ImF1dG8iLCJuZXQiOiJ0Y3AiLCJ0eXBlIjoiIiwidGxzIjoiIn0=
-socks://Og%3D%3D@141.11.42.163:1080#🇹🇼TW²_1|1.3MB/s|0%|GM|X|History|[广播|商宽]
-vmess://eyJ2IjoiMiIsInBzIjoi8J+HqfCfh6pERcKyXzJ8MC43TUIvc3xYfFN1Y2NlZWQiLCJhZGQiOiJ0Z2p1Lm9yZyIsInBvcnQiOiI4MDgwIiwiaWQiOiJuYXNuZXQiLCJhaWQiOiIwIiwic2N5IjoiYXV0byIsIm5ldCI6IndzIiwidHlwZSI6IiIsInRscyI6IiIsInBhdGgiOiIvbmFzbmV0L2NkbiIsImhvc3QiOiJ0Z2p1Lm9yZyJ9
-trojan://M7v%w11Se*@tttyder.wsone.icu:443?sni=tttyder.wsone.icu&allowInsecure=1&type=tcp#%F0%9F%87%AE%F0%9F%87%B3IN%C2%B2_1%7C1.2MB%2Fs%7CGPT%E2%81%BA%7CX%7CHistory%7C%5B%E5%B9%BF%E6%92%AD%7C%E6%9C%BA%E6%88%BF%5D
-trojan://BxceQaOe@58.152.25.208:443?sni=58.152.25.208&allowInsecure=1&type=tcp#%F0%9F%87%AD%F0%9F%87%B0HK%C2%B2_2%7C1.1MB%2Fs%7C2%25%7CX%7CSucceed%7C%5B%E5%8E%9F%E7%94%9F%7C%E4%BD%8F%E5%AE%85%5D
-vless://fcfc091d-81a4-40b7-cbdc-8eb7683617a4@2.hk.1.cdn-bilibili.cn:443?security=reality&type=tcp&sni=www.icloud.com&fp=safari&flow=xtls-rprx-vision&pbk=4cfuj5otn8-uhPUe23OhB6KY8I42AxxJNt4lWIpg_AU#%F0%9F%87%AD%F0%9F%87%B0HK%C2%B2_3%7C0.6MB%2Fs%7C2%25%7CD%2B%7CX%7CSucceed%7C%5B%E5%8E%9F%E7%94%9F%7C%E4%BD%8F%E5%AE%85%5D
+trojan://BxceQaOe@58.152.25.208:443?sni=58.152.25.208&allowInsecure=1&type=tcp#%F0%9F%87%AD%F0%9F%87%B0HK%C2%B2_1%7C1.4MB%2Fs%7C2%25%7CYT%7CD%2B%7CX%7CSucceed
+vless://fcfc091d-81a4-40b7-cbdc-8eb7683617a4@2.hk.1.cdn-bilibili.cn:443?security=reality&type=tcp&sni=www.icloud.com&fp=safari&flow=xtls-rprx-vision&pbk=4cfuj5otn8-uhPUe23OhB6KY8I42AxxJNt4lWIpg_AU#%F0%9F%87%AD%F0%9F%87%B0HK%C2%B2_2%7C2.2MB%2Fs%7CYT-RU%7CX%7CHistory%7C%5B%E5%8E%9F%E7%94%9F%7C%E4%BD%8F%E5%AE%85%5D
