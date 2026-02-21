@@ -1,2 +1,1 @@
-vmess://eyJ2IjoiMiIsInBzIjoi8J+HuvCfh7hVU8KyXzF8MC44TUIvc3xYfEhpc3RvcnkiLCJhZGQiOiJ2NDYuaGRhY2QuY29tIiwicG9ydCI6IjMwODQ2IiwiaWQiOiJjYmIzZjg3Ny1kMWZiLTM0NGMtODdhOS1kMTUzYmZmZDU0ODQiLCJhaWQiOiIyIiwic2N5IjoiYXV0byIsIm5ldCI6InRjcCIsInR5cGUiOiIiLCJ0bHMiOiIiLCJmcCI6ImNocm9tZSJ9
-vless://eb071647-72a6-46be-8e89-ff3d228d52f6@152.53.46.200:443?security=reality&type=tcp&sni=at.jojack.ru&fp=chrome&flow=xtls-rprx-vision&sid=8dc4fccb2bcfc99d&pbk=ca5sfJNcjkh3oNt51hRexXbGWgITAqCprGSU-YKCJBA&encryption=none#%F0%9F%87%A6%F0%9F%87%B9AT%C2%B2_1%7C0.6MB%2Fs%7CD%2B%7CX%7CSucceed
+hysteria2://f40ca239-4a76-4808-b56c-84d4e9969939@132.145.28.17:65535?insecure=1&sni=www.microsoft.com#%F0%9F%87%AC%F0%9F%87%A7GB%C2%B2_1%7C0.6MB%2Fs%7C8%25%7CGPT%E2%81%BA%7CX
